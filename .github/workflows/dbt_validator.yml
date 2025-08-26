@@ -18,4 +18,4 @@ jobs:
         with:
           # See this repo for schema validation https://github.com/dbt-labs/dbt-jsonschema
           schema: https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json
-          files: ./*.yml
+          files: ./**/*.yml
