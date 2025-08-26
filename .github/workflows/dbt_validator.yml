@@ -1,0 +1,20 @@
+name: Run dbt schema validator
+
+on:
+    pull_request:
+        branches:
+            - main
+
+jobs:
+  validate-github-actions-workflows:
+    name: Validate GitHub Actions workflows
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate workflows
+        uses: dsanders11/json-schema-validate-action@v1.4.0
+        with:
+          # See this repo for schema validation https://github.com/dbt-labs/dbt-jsonschema
+          schema: https://raw.githubusercontent.com/dbt-labs/dbt-jsonschema/main/schemas/latest/dbt_yml_files-latest.json
+          files: ./*.yml
