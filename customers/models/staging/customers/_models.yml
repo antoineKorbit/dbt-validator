@@ -1,0 +1,157 @@
+# this file was generated with dbt init with dbt 1.2.1
+
+version: 2
+
+models:
+  - name: my_first_dbt_model
+    description: "A starter dbt model"
+    jarrod: saltalamachhia
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        nomar: garciaparra
+        tests:
+          - unique
+          - not_null
+
+  - name: my_second_dbt_model
+    description: "A starter dbt model"
+    columns:
+      - name: id
+        description: "The primary key for this table"
+        tests:
+          - unique
+          - not_null
+
+semantic_models:
+  - model: ref('models')
+    name: model 
+    group: farmhands_only
+
+metrics:
+  - name: new_customers
+    label: New Customers marked 'paying'
+    model: ref('dim_model_7')
+    description: "The number of paid customers using the product"
+
+    calculation_method: count
+    expression: user_id # superfluous here, but shown as an example
+
+    timestamp: signup_date
+    time_grains: [day, week, month]
+
+    dimensions:
+      - plan
+      - country
+
+    filters:
+      - field: is_paying
+        operator: '='
+        value: 'true'
+      - field: company_name
+        operator: '!='
+        value: "Acme', Inc"
+
+    meta: 
+      team: "Finance"
+      refresh_rate: "Bob's weekly run"
+    
+    invalid_key: true
+
+
+  - name: derived_with_model_name
+    label: New Customers marked 'paying'
+    description: "The number of paid customers using the product"
+
+    calculation_method: derived
+    expression: "{{ metric('new_customers') }} * 2" 
+
+  - name: new_customer
+    description: Unique count of new customers.
+    label: New Customers
+    type: simple
+    type_params:
+      measure: 
+        name: customers_with_orders
+      metrics:
+        - name: order_total
+          alias: revenue
+          filter: |
+            {{ Dimension('order__is_food_order') }} = True
+      window: 1 month
+    filter: |
+      {{ Dimension('customer__customer_type') }}  = 'new'
+
+  - name: food_order_gross_profit
+    label: Food order gross profit
+    description: "The gross profit for each food order."
+    type: derived
+    type_params:
+      expr: revenue - cost
+      measure: 
+        name: customers_with_orders
+      metrics:
+        - name: order_total
+          alias: revenue
+          filter: |
+            {{ Dimension('order__is_food_order') }} = True
+        - name: order_cost
+          alias: cost
+          filter: |
+            {{ Dimension('order__is_food_order') }} = True
+
+  - name: cumulative_order_total_l1m
+    label: Cumulative Order total (L1M)   
+    description: Trailing 1-month cumulative order amount
+    type: joel
+    type_params:
+      measure: 
+        name: order_total
+        fill_nulls_with: 0
+      window: 1 month
+
+  - name: visit_to_buy_conversion_rate_7_day_window
+    description: "Conversion rate from viewing a page to making a purchase"
+    type: conversion
+    label: Visit to Seller Conversion Rate (7 day window)
+    type_params:
+      conversion_type_params:
+        expr: revenue - cost
+        calculation: conversions
+        base_measure:
+          name: visits
+        conversion_measure: 
+          name: buys
+          fill_nulls_with: 0
+        entity: user
+        window: 7 days 
+
+
+unit_tests:
+  - name: some_unit_test
+    expect:
+      rows: |
+        col_1,col_2
+        val_1,val_2
+
+
+saved_queries:
+  - name: test_saved_query
+    description:
+      term: paper
+    label: Test saved query
+    query_params:
+      metrics: simple_metric
+      group_by:
+          - "Dimension('user__ds')"
+      where:
+          - "{{ Dimension('user__ds', 'DAY') }} <= now()"
+          - "{{ Dimension('user__ds', 'DAY') }} >= '2023-01-01'"
+    exports:
+      - name: my_export
+        config:
+          alias: my_export_alias
+          export_as: joel
+          schema: 
+            - my_export_schema_name
+            - my_export_schema_name_2}
